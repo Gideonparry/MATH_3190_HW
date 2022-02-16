@@ -1,0 +1,26 @@
+---
+title: "Package"
+author: "Gideon Parry"
+date: "2/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+setwd("C:\\Users\\Owner\\Documents\\Math_3190\\github")
+devtools::create("basketball")
+```
+
+
+```{r}
+setwd("basketball")
+usethis::use_mit_license()
+```
+
+```{r}
+devtools::document()
+```
