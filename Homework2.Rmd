@@ -1,0 +1,285 @@
+---
+title: "Math_3190_HW2"
+author: "Gideon Parry"
+date: "2/3/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+The scan function is uesd to read a text file, with the what = argument being used
+to decide how the file is read in to R an example of that is
+
+```{r scan function}
+scan("satscores.txt", what = "character")
+```
+Readlines can be used to well, read lines from a file. It can be used to only read the 
+first n lines of a file as well
+
+```{r readlines}
+my_txt_ex2 <- readLines(paste("satscores.txt", sep = ""),
+                        n = 2)
+```
+read_html is used to read text from an html page. An example of this is 
+```{r read_html}
+library(xml2)
+Brazil <- read_html("http://en.wikipedia.org/wiki/Brazil_national_football_team")
+```
+
+readr is a package that include different ways to read rectangular data, such as:
+
+read_csv(): comma-separated values (CSV) files
+read_tsv(): tab-separated values (TSV) files
+read_delim(): delimited files (CSV and TSV are important special cases)
+read_fwf(): fixed-width files
+read_table(): whitespace-separated files
+read_log(): web log files
+
+readxl is used to read excel files. 
+read_exel(filename, sheet="sheet name") is how to get a specific sheet from the 
+excel file
+## Question 3
+
+
+
+Attaching tidyverse and downloading file
+
+```{r file download}
+library(tidyverse)
+download.file("http://kenpom.com/cbbga22.txt","cbb.txt")
+
+```
+
+Making it a tibble
+```{r }
+cbb = read.fwf("cbb.txt", widths = c(10,24,4,22,5,3,20))
+
+cbb = tibble(cbb)
+View(cbb)
+
+```
+
+Renaming columns
+```{r}
+cbb <- rename(cbb, Date = V1)
+cbb <- rename(cbb, Away_team = V2)
+cbb <- rename(cbb, Away_score = V3)
+cbb <- rename(cbb,Home_team = V4)
+cbb <- rename(cbb, Home_score = V5)
+View(cbb)
+```
+
+Adding score difference
+```{r}
+cbb <- cbb %>%
+  mutate(score_diff = Home_score - Away_score)
+View(cbb)
+```
+
+Trimming and formatting date as date
+```{r}
+cbb = cbb %>%
+  mutate(Date = trimws(Date, which = "both"))
+
+library(lubridate)
+cbb <- cbb %>%
+  mutate(Date = mdy(Date))
+```
+
+Trimming home and away teams
+``` {r}
+
+cbb <- cbb %>%
+  mutate(Away_team = trimws(Away_team, which = "both"))
+
+cbb <- cbb %>%
+  mutate(Home_team = trimws(Home_team, which = "both"))
+```
+
+Arranging by location
+```{r}
+cbb <- cbb %>%
+  mutate(V7 = trimws(V7, which = "both"))
+
+cbb <- cbb %>%
+  mutate(site = ifelse(is.na(V7),Home_team, V7))
+
+cbb <- arrange(cbb, site)
+
+View(cbb)
+```
+
+Removing colums
+```{r}
+cbb <- cbb %>% select(!(V6 | V7))
+```
+
+win percentage for one team
+```{r}
+suu_wins = cbb %>% summarize(
+  win_pct = ((sum(Home_team == "Southern Utah" & score_diff > 0) + sum(Away_team == "Southern Utah" & score_diff < 0))
+             /(sum(Home_team == "Southern Utah" | Away_team == "Southern Utah"))
+       ), 
+      wins = (sum(Home_team == "Southern Utah" & score_diff > 0) + sum(Away_team == "Southern Utah" & score_diff < 0)),
+      losses = (sum(Home_team == "Southern Utah" & score_diff < 0) + sum(Away_team == "Southern Utah" & score_diff > 0))
+      )   
+    
+View(suu_wins)
+```
+
+function to do it for anyone
+
+```{r}
+win_pct <- function(team_name, df){
+  team = df %>% summarize(
+    team = team_name,
+    win_pct = ((sum(Home_team == team_name & score_diff > 0) + sum(Away_team == team_name & score_diff < 0))
+               /(sum(Home_team == team_name | Away_team == team_name))),
+    wins = (sum(Home_team == team_name & score_diff > 0) + sum(Away_team == team_name & score_diff < 0)),
+    losses = (sum(Home_team == team_name & score_diff < 0) + sum(Away_team == team_name & score_diff > 0))
+    
+     )
+  return (team)
+}
+```
+
+Using that function on SUU
+
+```{r}
+suu_wpct <- win_pct("Southern Utah", cbb)
+View(suu_wpct)
+```
+
+Creating tibble with that info for everyone
+```{r}
+teams = c()
+for (i in 1:length(cbb$Away_team)){
+  if (!(cbb$Away_team[i] %in% teams)){
+    teams = append(teams, cbb$Away_team[i])
+  }
+}
+
+teams
+
+all_wpct <- tibble(
+  team = character(),
+  win_pct = numeric(),
+  wins = numeric(),
+  losses = numeric(),
+)
+
+
+for(i in 1:length(teams)){
+  all_wpct[i,] = win_pct(teams[i],cbb)
+}
+View(all_wpct)
+```
+Given team
+```{r}
+team_games <- function(team_name,df){
+  games <- df %>%
+    filter(Home_team == team_name | Away_team == team_name)
+  games <- games %>%
+    mutate(score_diff = ifelse(Away_team == team_name, -score_diff, score_diff))
+  games <- games %>%
+    mutate(points_for = ifelse(Away_team == team_name, Away_score, Home_score))
+  games <- games %>%
+    mutate(points_against = ifelse(Away_team == team_name, Home_score, Away_score))
+  games <- arrange(games, Date)
+  return(games)
+}
+```
+
+checking that with SUU
+
+```{r}
+suu_games <- team_games("Southern Utah", cbb)
+View(suu_games)
+```
+
+```{r}
+library(reshape2)
+suu_games <- suu_games %>%
+  select(Date | points_for | points_against | score_diff)
+
+View(suu_games)
+suu_games <- melt(suu_games, id = "Date")
+
+cols <- c("dark green", "red", "blue")
+
+ggplot(suu_games, aes(x = Date, y = value, color = variable)) +
+  geom_line() +
+  scale_color_manual(values = cols)
+
+```
+Graphing function
+```{r}
+points_graph <- function(team_name, df){
+  games <- df %>%
+    filter(Home_team == team_name | Away_team == team_name)
+  games <- games %>%
+    mutate(score_diff = ifelse(Away_team == team_name, -score_diff, score_diff))
+  games <- games %>%
+    mutate(points_for = ifelse(Away_team == team_name, Away_score, Home_score))
+  games <- games %>%
+    mutate(points_against = ifelse(Away_team == team_name, Home_score, Away_score))
+  games <- arrange(games, Date)
+    
+  games <- games %>%
+  select(Date | points_for | points_against | score_diff)
+
+  
+  games <- melt(games, id = "Date")
+
+  cols <- c("dark green", "red", "blue")
+  title <- paste(team_name,"points over time")
+  
+  return(
+  ggplot(games, aes(x = Date, y = value, color = variable)) +
+    geom_line() +
+    scale_color_manual(values = cols)+
+    geom_point()
+  + labs(title = title)
+  )
+}
+```
+
+
+Date filter
+
+```{r}
+cbb22 <- cbb %>%
+  filter(Date >= as.Date("2022-01-01"))
+
+View(cbb22)
+```
+
+
+Shiny app
+```{r}
+library(shiny)
+
+teams = c()
+for (i in 1:length(cbb$Away_team)){
+  if (!(cbb$Away_team[i] %in% teams)){
+    teams = append(teams, cbb$Away_team[i])
+  }
+}
+
+ui <- fluidPage(
+  selectInput('xcol', 'Team', teams), 
+  plotOutput("graph")
+  )
+
+server <- function(input, output){
+  output$graph <- renderPlot({
+    points_graph(input$xcol,cbb)
+  })
+  }
+
+shinyApp(server = server, ui = ui)
+```
