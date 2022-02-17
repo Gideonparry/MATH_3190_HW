@@ -42,6 +42,16 @@ read_log(): web log files
 readxl is used to read excel files. 
 read_exel(filename, sheet="sheet name") is how to get a specific sheet from the 
 excel file
+
+## Question 2
+The S3 class is considered to be more flexible than the s4 class. Memory environments 
+create the flexibility in s3. Enivronemnet is local scope with variables in it. 
+
+s4 is useful for storing arbitrary complex information, and provides stricter definitions
+of classes.
+
+R6 is lighter weight and provides things like public and private methods. 
+
 ## Question 3
 
 
@@ -107,6 +117,8 @@ cbb <- cbb %>%
 
 cbb <- cbb %>%
   mutate(site = ifelse(is.na(V7),Home_team, V7))
+cbb <- cbb %>%
+  mutate(nuetral = ifelse(is.na(V7),0,1))
 
 cbb <- arrange(cbb, site)
 
@@ -178,7 +190,7 @@ for(i in 1:length(teams)){
 }
 View(all_wpct)
 ```
-Given team
+Only games for Given team
 ```{r}
 team_games <- function(team_name,df){
   games <- df %>%
@@ -190,6 +202,16 @@ team_games <- function(team_name,df){
   games <- games %>%
     mutate(points_against = ifelse(Away_team == team_name, Home_score, Away_score))
   games <- arrange(games, Date)
+  games <- games %>%
+    mutate(site = ifelse((Home_team == team_name) & (Home_team == site),"Home", 
+                  ifelse((Away_team == team_name) & (Home_team == site),"Away",site)))
+  games <- games %>%
+    mutate(opponent = ifelse(Home_team == team_name, Away_team, Home_team))
+  games <- games %>%
+    mutate(result = ifelse(score_diff > 0 ,"win", "loss")) %>%
+    mutate(Date = as.character(Date)) %>%
+    select(Date | opponent | site | result | points_for | points_against)
+  
   return(games)
 }
 ```
@@ -201,19 +223,19 @@ suu_games <- team_games("Southern Utah", cbb)
 View(suu_games)
 ```
 
-```{r}
+```{r, echo= FALSE}
 library(reshape2)
-suu_games <- suu_games %>%
-  select(Date | points_for | points_against | score_diff)
+#suu_games <- suu_games %>%
+#  select(Date | points_for | points_against | score_diff)
 
-View(suu_games)
-suu_games <- melt(suu_games, id = "Date")
+#View(suu_games)
+#suu_games <- melt(suu_games, id = "Date")
 
-cols <- c("dark green", "red", "blue")
+#cols <- c("dark green", "red", "blue")
 
-ggplot(suu_games, aes(x = Date, y = value, color = variable)) +
-  geom_line() +
-  scale_color_manual(values = cols)
+#ggplot(suu_games, aes(x = Date, y = value, color = variable)) +
+#  geom_line() +
+#  scale_color_manual(values = cols)
 
 ```
 Graphing function
@@ -272,14 +294,18 @@ for (i in 1:length(cbb$Away_team)){
 
 ui <- fluidPage(
   selectInput('xcol', 'Team', teams), 
-  plotOutput("graph")
+  plotOutput("graph"),
+  tableOutput('winpct'),
+  tableOutput('games')
   )
 
 server <- function(input, output){
   output$graph <- renderPlot({
     points_graph(input$xcol,cbb)
   })
+  output$winpct <- renderTable({win_pct(input$xcol,cbb)})
+  output$games <- renderTable({team_games(input$xcol, cbb)})
   }
-
+  
 shinyApp(server = server, ui = ui)
 ```
