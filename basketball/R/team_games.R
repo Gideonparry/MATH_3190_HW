@@ -22,5 +22,24 @@ team_games <- function(team_name,df){
     filter(Home_team == team_name | Away_team == team_name)
   games <- games %>%
     mutate(score_diff = ifelse(Away_team == team_name, -score_diff, score_diff))
+  games <- games %>%
+    mutate(points_for = ifelse(Away_team == team_name, Away_score, Home_score))
+  games <- games %>%
+    mutate(points_against = ifelse(Away_team == team_name, Home_score, Away_score))
+  games <- arrange(games, Date)
+  games <- games %>%
+    mutate(site = ifelse((Home_team == team_name) & (Home_team == site),"Home", 
+                         ifelse((Away_team == team_name) & (Home_team == site),"Away",site)))
+  games <- games %>%
+    mutate(opponent = ifelse(Home_team == team_name, Away_team, Home_team))
+  games <- games %>%
+    mutate(result = ifelse(score_diff > 0 ,"win", "loss")) %>%
+    mutate(Date = as.character(Date)) %>%
+    select(Date | opponent | site | result | points_for | points_against) %>%
+    mutate(points_for = format(round(points_for, 2), nsmall = 2) ) %>%
+    mutate(points_against = format(round(points_against, 2), nsmall = 2) )
+   
+    
+  
   return(games)
 }

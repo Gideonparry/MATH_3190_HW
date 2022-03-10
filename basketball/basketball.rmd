@@ -1,5 +1,5 @@
 ---
-title: "Package"
+title: "Basketball"
 author: "Gideon Parry"
 date: "2/12/2022"
 output: html_document
@@ -11,8 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
-setwd("C:\\Users\\Owner\\Documents\\Math_3190\\github")
-devtools::create("basketball")
+setwd("C:\\Users\\Owner\\Documents\\Math_3190\\github\\basketball")
+#devtools::create("basketball")
 ```
 
 
@@ -23,4 +23,8 @@ usethis::use_mit_license()
 
 ```{r}
 devtools::document()
+
+devtools::install()
+
+usethis::use_testthat()
 ```

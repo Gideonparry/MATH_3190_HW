@@ -1,10 +1,8 @@
 #' Creates a plot of points, for, against, and difference over time for a team
 #' 
 #' Takes a team name and tibble of college basketball games played and returns
-#' a plot with dates on the y axis and points on the x axis with 3 seperate lines.
-#' A green line representing points for, a red line representing poins against, and
-#' a blue line representing points difference.Requires ggplot2 and reshape2 packages
-#'
+#' a histogram of their points differnces in their games.
+#' 
 #' @param team_name The name of a team \code{inputParameter1}
 #' @param df data fram containg college basketball games played \code{inputParameter2}
 #'
@@ -17,9 +15,7 @@
 #' @examples
 #' points_graph("Gonzaga", cbb)
 
-library(reshape2)
-library(ggplot2)
-points_graph <- function(team_name, df){
+points_diff_hist <- function(team_name,df){
   games <- df %>%
     filter(Home_team == team_name | Away_team == team_name)
   games <- games %>%
@@ -29,21 +25,16 @@ points_graph <- function(team_name, df){
   games <- games %>%
     mutate(points_against = ifelse(Away_team == team_name, Home_score, Away_score))
   games <- arrange(games, Date)
-  
   games <- games %>%
-    select(Date | points_for | points_against | score_diff)
+    mutate(site = ifelse((Home_team == team_name) & (Home_team == site),"Home", 
+                         ifelse((Away_team == team_name) & (Home_team == site),"Away",site)))
+  games <- games %>%
+    mutate(opponent = ifelse(Home_team == team_name, Away_team, Home_team))
+  games <- games %>%
+    mutate(result = ifelse(score_diff > 0 ,"win", "loss")) %>%
+    mutate(Date = as.character(Date)) %>%
+    select(Date | opponent | site | result | points_for | points_against | score_diff)
   
+  return(qplot(games$score_diff, geom="histogram", binwidth = 5, fill=I("blue")))
   
-  games <- melt(games, id = "Date")
-  
-  cols <- c("blue", "red", "black")
-  title <- paste(team_name,"points over time")
-  
-  return(
-    ggplot(games, aes(x = Date, y = value, color = variable)) +
-      geom_line() +
-      scale_color_manual(values = cols)+
-      geom_point()
-    + labs(title = title)
-  )
 }
