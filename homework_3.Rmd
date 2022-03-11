@@ -1,0 +1,38 @@
+---
+title: "MATH 3190 Homework 3"
+author: "Data Visualizations and Ethics"
+date: "Due 3/9/2022"
+output: pdf_document
+---
+
+Here is 
+
+\begin{enumerate}
+	\item (get your previous points!) Keep working on your Shiny interfaces and packages! Complete any of the previous tasks you have not finished, and work to make your packages and interfaces better!
+	\item (20 points) Using the principles and guidelines from the data visualization lecture slides (we did not finish!), evaluate the plots in your Shiny interfaces (k means and basketball) and improve them! Also, add 3 more high-quality and highly-informative plots or tables to your interface. Use ggplot for all plots in the interface!
+	
+	Done 
+	\item (20 points) Finish going through the examples from the ggplot lecture. Confirm in your RMarkdown that you completed this task (on your honor!).  
+	
+	Done
+	
+	\item (20 points) Go find 5 solid examples where statistics have been misused, misrepresented (graphs), or misinterpreted. Add the link or graph to the RMarkdown document, and describe what they did wrong. What should they have done differently? Which of the 12 data science principles did they violate?  
+	 
+	 ![Muder Graph.](C:/Users/Owner/Documents/Math_3190/Images/race_murder.jpg)
+The issue here is that it show the rate by the murder's race. It may very well be true that people are more likely to be murdered by those of their own race, but it would be better to show this on a rate by the victim's race.This could lead to people misinterpreting the data
+
+![visa graph](C:/Users/Owner/Documents/Math_3190/Images/visas.png)
+The problem with this one is that by using a 3d graph it made the total appear to be below 40,000 when it actually was not. The issue with that is that it's misleading.
+
+When Colgate said that 80% of Dentists recommend them, that survey allowed them to recommend multiple options, so they were not recommending that Colgate be used over other brands
+
+![Welfare Graph](C:/Users/Owner/Documents/Math_3190/Images/usa-today-2.png)
+This one is one where the y axis does not start at 0, and makes the increase seem more extreme than it really is.
+
+
+![Welfare Graph](C:/Users/Owner/Documents/Math_3190/Images/diminishing-return.jpg)
+
+The issue here is that it left out the fact the the cost of not going to college is also rising at a rapid rate.It could lead to people making uninformed decisions about it.
+
+\end{enumerate}
+
