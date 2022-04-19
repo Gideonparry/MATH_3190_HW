@@ -1,0 +1,91 @@
+---
+title: "MATH 3190 Homework 7"
+author: "Regularization, Cross-validation, Dimension reduction"
+date: "Due 4/15/2022"
+output: pdf_document
+
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+suppressPackageStartupMessages({
+    library(tidyverse)
+    library(DT)
+})
+```
+
+In this homework add K-nearest neighbor and dimension reduction features to your Shiny Apps. Please do the following and upload changes to your packages on GitHub:   
+
+\begin{enumerate}
+   \item (50 points) Here we will modify your K-means package and Shiny App to include K nearest neighbor, principle components, and umap functions. Please do the following: 
+    \begin{enumerate}
+    \item {\bf Kmeans:} Change your K-means algorithm to allow for the users choice of 1 or more input variables (currently using 2), still allowing for the user to choose $K$ and display the two dimensions of choice (as is the case currently). Change K-means plotting function (and thus the app) to display iris species in different colors and classification group using shapes (add a legend to this plot). Apply cross-validation to identify the the optimal value for $K$ for the iris dataset. 
+    \item {\bf K nearest neighbors:} Write a function that plots the classification results of a K nearest neighbors algorithm for the users choice of 1 or more input variables and the user's choice of $K$. Plot points in two dimensions (user's choice) and display iris species in different colors and classification group using shapes (add a legend). Add this to the K-means Shiny App. Apply cross-validation to identify the the optimal value for $K$ for the iris dataset.   
+    \item {\bf Dimension reduction:} write a function that applies dimension reduction methods (PCA, UMAP) to a dataset and plots a user's choice of reduced components in two dimensions (UMAP only provides two), and color the points based on iris species (add a legend).
+    \item Which methods would you prefer for classification or analysis for the iris dataset? 
+    \end{enumerate}
+    
+    \item (50 points) For your basketball dataset, \texttt{mutate} or \texttt{summarize} a new dataset that contains the following for each team: average points scored (total, home, away), average points allowed (total, home, away), score difference (total, home, away), winning percentage (total, home, away) new columns for each team (may need to use a log or logistic transformation), conference (get help from Akhil), whether or not they participated in the tournament, and any other relevant statistic or summary measure may think of (if you come up with something good, share with the class!). Do the following: 
+    \begin{enumerate}
+    
+```{r}
+library(basketball)
+library(shiny)
+library(reshape2)
+library(tidyverse)
+library(DT)
+library(data.table)
+
+download.file("http://kenpom.com/cbbga22.txt","cbb.txt")
+
+cbb = read.fwf("cbb.txt", widths = c(10,24,4,22,5,3,20))
+
+cbb = tibble(cbb)
+
+cbb = kenpom_reformat(cbb)
+
+conf_teams <- read.csv("https://raw.githubusercontent.com/Gideonparry/MATH_3190_HW/main/kenpom22_conf.csv")
+
+conf_teams <- conf_teams %>%
+  mutate(Date = mdy(Date))
+
+cbb <- merge(x = cbb, y = conf_teams, by = c("Date", "Away_team"), all.x = TRUE)
+
+team_stats <- read.csv("https://raw.githubusercontent.com/Gideonparry/MATH_3190_HW/main/team_stats.csv")
+```
+        \item Fit a LASSO model to predict factors that predict final winning percentage (might have to use a log or logistic transformation on the percentage). Exclude home and away winning percentage. Identify a "best" value for $\lambda$ and interpret your model. 
+        
+```{r}
+library(glmnet)
+basketball_cv <- cv.glmnet(data.matrix(d1_teams[,c(11:13,16:18,21,24,26:35)]), d1_teams$win_pct, alpha = 1)
+basketball_best_lambda_model <- glmnet(data.matrix(d1_teams[,c(11:13,16:18,21,24,26:35)]), d1_teams$win_pct,   alpha = 1, lambda = basketball_cv$lambda.min)
+
+coef(basketball_best_lambda_model)
+```
+Based on this model win_pct = 8.316838e-01 + 2.335618e-04 * confenence + 1.120478e-02  * SRS -1.249460e-02 * SOS + 1.252175e-02 * PPG -1.472649e-02 * ppg_allowd -7.657976e-03 * MP + 9.588028e-02 * 3P_pct + 9 + 6.171343e-03 * FTA + 9.588028e-02 * FT_pct -3.445813e-03 * ORB + 8.210916e-04 * STL -9.681581e-05 * BLK -1.415268e-03 * TOV -2.405384e-03 * PF +3.678196e-02 * tournament
+
+These variables aren't great since they don't include oppenent's stats, but this is the best we can get from the data used here. Most stats come from sports reference.
+
+        \item Use PCA and UMAP to provide a two-dimensional map for all of these variables except conference and tournament participation. Try to interpret the PCA rotations. In the plot, do you see any patterns (e.g. conference? tournament appearance?). Do these reductions work better than the individual vairable alone? Add a dimension reduction feature to your basketball Shiny App.  
+    \end{enumerate}
+    
+```{r}
+##PCA
+x = data.matrix(data.matrix(d1_teams[,c(12:13,16:18,21,24,26:34)]))
+pca_bball <- prcomp(x)
+summary(pca_bball)
+
+data.frame(pca_bball$x[,1:2], Conference = d1_teams$conference, Tournament = d1_teams$tournament) %>%
+ggplot(aes(PC1,PC2, fill = Conference))+
+geom_point(cex=3, pch=21, aes(shape = Tournament)) +
+coord_fixed(ratio = 1)
+
+##UMAP
+library(umap)
+umap_bball <- umap(d1_teams[,c(12:13,16:18,21,24,26:34)])
+data.frame(umap_bball$layout, Conference=d1_teams$conference) %>%
+ggplot(aes(X1,X2, fill = Conference))+
+geom_point(cex=3, pch=21) +
+coord_fixed(ratio = 1)
+```
+
+\end{enumerate}
